@@ -9,7 +9,7 @@ pub struct LoginRequest {
     pub password_hash: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AuthResponse {
     pub token: String,
     pub user_id: i64,
@@ -30,7 +30,11 @@ pub async fn login(
         .users_repo
         .find_by_email(payload.email)
         .await?
-        .ok_or(AppError::NotFound)?;
+        .ok_or(AppError::Unauthorized)?;
+
+    if user.password_hash != payload.password_hash {
+        return Err(AppError::Unauthorized);
+    }
 
     let token = match create_jwt(user.id) {
         Ok(v) => v,

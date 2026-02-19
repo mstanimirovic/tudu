@@ -1,13 +1,12 @@
 use axum::{
     Extension,
-    extract::{Json, Path, State},
+    extract::{Json, State},
 };
-use sqlx::SqlitePool;
 
 use crate::{
     error::AppError,
     state::AppState,
-    users::models::{CreateUser, UpdateUser, User},
+    users::models::{UpdateUser, User},
 };
 
 pub async fn get_all_users(State(state): State<AppState>) -> Result<Json<Vec<User>>, AppError> {
@@ -20,7 +19,7 @@ pub async fn get_user(
     State(state): State<AppState>,
 ) -> Result<Json<User>, AppError> {
     let user = state.users_repo.find_by_id(user_id).await?;
-    match (user) {
+    match user {
         Some(v) => Ok(Json(v)),
         None => Err(AppError::NotFound),
     }
@@ -32,7 +31,7 @@ pub async fn update_user(
     Json(payload): Json<UpdateUser>,
 ) -> Result<Json<User>, AppError> {
     let user = state.users_repo.update(user_id, payload).await?;
-    match (user) {
+    match user {
         Some(v) => Ok(Json(v)),
         None => Err(AppError::NotFound),
     }

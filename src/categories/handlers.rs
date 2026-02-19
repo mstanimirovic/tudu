@@ -4,10 +4,7 @@ use axum::{
 };
 
 use crate::{
-    categories::{
-        self,
-        models::{Category, CreateCategory, UpdateCateogry},
-    },
+    categories::models::{Category, CreateCategory, UpdateCateogry},
     error::AppError,
     state::AppState,
 };
@@ -53,8 +50,14 @@ pub async fn update_category(
     Json(payload): Json<UpdateCateogry>,
 ) -> Result<Json<Category>, AppError> {
     match state.categories_repo.find_by_id(id).await? {
-        Some(_) => {}
-        None => return Err(AppError::Forbidden),
+        Some(v) => {
+            if let Some(cuser) = v.user_id
+                && cuser != user_id
+            {
+                return Err(AppError::Forbidden);
+            }
+        }
+        None => return Err(AppError::NotFound),
     };
 
     match state.categories_repo.update(id, payload).await? {

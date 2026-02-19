@@ -34,7 +34,7 @@ pub async fn login(
 
     let token = match create_jwt(user.id) {
         Ok(v) => v,
-        Err(e) => return Err(AppError::InternalError),
+        Err(_) => return Err(AppError::InternalError),
     };
 
     Ok(Json(AuthResponse {
@@ -58,7 +58,7 @@ pub async fn register(
 
     let token = match create_jwt(user.id) {
         Ok(v) => v,
-        Err(e) => return Err(AppError::InternalError),
+        Err(_) => return Err(AppError::InternalError),
     };
 
     Ok(Json(AuthResponse {

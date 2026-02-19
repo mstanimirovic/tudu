@@ -1,7 +1,6 @@
 use crate::{
-    categories::repository::CategoryRepository,
-    todos::repository::TodoRepository,
-    users::{models::User, repository::UserRepository},
+    categories::repository::CategoryRepository, todos::repository::TodoRepository,
+    users::repository::UserRepository,
 };
 
 #[derive(Clone)]

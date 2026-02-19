@@ -27,7 +27,7 @@ impl CategoryRepository {
         .await
     }
 
-    pub async fn find_all(&self, user_id: i64) -> Result<Vec<Category>, sqlx::Error> {
+    pub async fn find_all(&self) -> Result<Vec<Category>, sqlx::Error> {
         sqlx::query_as::<_, Category>("SELECT * FROM categories")
             .fetch_all(&self.pool)
             .await

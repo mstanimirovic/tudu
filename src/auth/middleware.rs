@@ -1,10 +1,5 @@
 use crate::{auth::jwt::verify_jwt, error::AppError};
-use axum::{
-    extract::Request,
-    http::{HeaderMap, StatusCode},
-    middleware::Next,
-    response::{IntoResponse, Response},
-};
+use axum::{extract::Request, http::HeaderMap, middleware::Next, response::Response};
 
 pub async fn auth_middleware(
     headers: HeaderMap,

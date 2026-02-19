@@ -2,7 +2,6 @@ use axum::{
     Extension,
     extract::{Json, Path, State},
 };
-use sqlx::SqlitePool;
 
 use crate::{
     error::AppError,
@@ -53,9 +52,13 @@ pub async fn update_todo(
     Path(id): Path<i64>,
     Json(payload): Json<UpdateTodo>,
 ) -> Result<Json<Todo>, AppError> {
-    let todo = match state.todos_repo.find_by_id(id).await? {
-        Some(v) => v,
-        None => return Err(AppError::Forbidden),
+    match state.todos_repo.find_by_id(id).await? {
+        Some(v) => {
+            if v.user_id != user_id {
+                return Err(AppError::Forbidden);
+            }
+        }
+        None => return Err(AppError::NotFound),
     };
 
     match state.todos_repo.update(id, payload).await? {

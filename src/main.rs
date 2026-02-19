@@ -7,10 +7,14 @@ use axum::{
     response::Response,
     routing::get,
 };
+use sqlx::{Pool, Sqlite};
 use std::time::Instant;
 
 use crate::{
-    error::AppError, state::AppState, todos::repository::TodoRepository,
+    config::{host_url, port},
+    error::AppError,
+    state::AppState,
+    todos::repository::TodoRepository,
     users::repository::UserRepository,
 };
 
@@ -29,17 +33,14 @@ async fn health() -> Result<Json<String>, AppError> {
     Ok(Json(String::from("ok")))
 }
 
-#[tokio::main]
-async fn main() -> () {
-    dotenvy::dotenv().ok();
-
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-
+async fn create_pool() -> Pool<Sqlite> {
     let pool = db::create_pool().await.unwrap();
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    return pool;
+}
 
+async fn create_app() -> Router {
+    let pool = create_pool().await;
     let app_state = AppState::new(
         UserRepository::new(pool.clone()),
         TodoRepository::new(pool.clone()),
@@ -53,10 +54,21 @@ async fn main() -> () {
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
+    return app;
+}
 
-    println!("Server running on http://127.0.0.1:3000");
+#[tokio::main]
+async fn main() -> () {
+    dotenvy::dotenv().ok();
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    let app = create_app().await;
+    let url = host_url() + ":" + port().as_str();
+    let listener = tokio::net::TcpListener::bind(url.clone()).await.unwrap();
+
+    println!("Server running on http://{}", url);
     axum::serve(listener, app).await.unwrap();
 }

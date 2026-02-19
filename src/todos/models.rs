@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Todo {
     pub id: i64,
     pub user_id: i64,
+    pub category_id: i64,
     pub title: String,
     pub description: Option<String>,
     pub completed: bool,
@@ -13,12 +14,14 @@ pub struct Todo {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateTodo {
+    pub category_id: i64,
     pub title: String,
     pub description: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateTodo {
+    pub category_id: Option<i64>,
     pub title: Option<String>,
     pub description: Option<String>,
     pub completed: Option<bool>,

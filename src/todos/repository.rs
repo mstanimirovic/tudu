@@ -13,9 +13,10 @@ impl TodoRepository {
 
     pub async fn create(&self, user_id: i64, payload: CreateTodo) -> Result<Todo, sqlx::Error> {
         sqlx::query_as::<_, Todo>(
-            "INSERT INTO todos (user_id, title, description) VALUES (?, ?, ?) RETURNING *",
+            "INSERT INTO todos (user_id, category_id, title, description) VALUES (?, ?, ?, ?) RETURNING *",
         )
         .bind(user_id)
+        .bind(payload.category_id)
         .bind(&payload.title)
         .bind(&payload.description)
         .fetch_one(&self.pool)
@@ -43,6 +44,14 @@ impl TodoRepository {
     }
 
     pub async fn update(&self, id: i64, payload: UpdateTodo) -> Result<Option<Todo>, sqlx::Error> {
+        if let Some(category_id) = &payload.category_id {
+            sqlx::query("UPDATE todos SET category_id = ? WHERE id = ?")
+                .bind(category_id)
+                .bind(id)
+                .execute(&self.pool)
+                .await?;
+        }
+
         if let Some(title) = &payload.title {
             sqlx::query("UPDATE todos SET title = ? WHERE id = ?")
                 .bind(title)

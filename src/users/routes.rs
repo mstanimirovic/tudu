@@ -7,7 +7,7 @@ use sqlx::SqlitePool;
 pub fn routes() -> Router<AppState> {
     let protected = Router::new()
         .route(
-            "/{id}",
+            "/me",
             get(handlers::get_user)
                 .put(handlers::update_user)
                 .delete(handlers::delete_user),

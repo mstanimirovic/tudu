@@ -25,25 +25,6 @@ mod state;
 mod todos;
 mod users;
 
-async fn print_request(req: Request, next: Next) -> Response {
-    let method = req.method().clone();
-    let uri = req.uri().clone();
-
-    let start = Instant::now();
-    let response = next.run(req).await;
-    let duration = start.elapsed();
-
-    println!(
-        "{} {} - {} - {:?}",
-        method,
-        uri.path(),
-        response.status().as_u16(),
-        duration
-    );
-
-    response
-}
-
 async fn health() -> Result<Json<String>, AppError> {
     Ok(Json(String::from("ok")))
 }
@@ -69,7 +50,6 @@ async fn main() -> () {
         .nest("/auth", auth::routes::routes())
         .nest("/api/users", users::routes::routes())
         .nest("/api/todos", todos::routes::routes())
-        // .layer(middleware::from_fn(print_request))
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 

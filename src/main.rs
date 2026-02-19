@@ -7,6 +7,8 @@ use axum::{
     response::Response,
     routing::get,
 };
+use serde::Serialize;
+use serde_json::json;
 use sqlx::{Pool, Sqlite};
 use std::time::Instant;
 
@@ -22,6 +24,7 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod auth;
+mod categories;
 mod config;
 mod db;
 mod error;
@@ -29,8 +32,15 @@ mod state;
 mod todos;
 mod users;
 
-async fn health() -> Result<Json<String>, AppError> {
-    Ok(Json(String::from("ok")))
+#[derive(Debug, Serialize)]
+struct HealthResponse {
+    status: String,
+}
+
+async fn health() -> Result<Json<HealthResponse>, AppError> {
+    Ok(Json(HealthResponse {
+        status: "ok".to_string(),
+    }))
 }
 
 async fn create_pool() -> Pool<Sqlite> {

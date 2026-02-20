@@ -14,111 +14,313 @@ A minimal, production-lean backend for a Todo application built with **Rust**, *
 
 ---
 
-## Features (current / intended)
+# Authentication
 
-- CRUD for todos
-- Health check endpoint
-- SQLite persistence via SQLx
-- Async execution (Tokio)
+## POST `/auth/register`
 
----
+Creates new user.
 
-## Configuration
-
-Use environment variables (or a `.env` file):
-
-```bash
-DATABASE_URL=sqlite://tudu.db
-HOST=127.0.0.1
-PORT=3000
-```
-
-Notes:
-
-* For SQLite, `DATABASE_URL` typically looks like `sqlite://file.db`.
-* If you want an in-memory DB for tests/dev: `sqlite::memory:` (depending on your setup).
-
----
-
-## Run Locally
-
-```bash
-cargo run
-```
-
-Example output expectation:
-
-* Server listening on `http://127.0.0.1:3000`
-
----
-
-## API Endpoints
-
-Base URL: `http://127.0.0.1:3000`
-
-### 1) Health Check
-
-**GET** `/health`
-
-**Response 200**
+### Request
 
 ```json
 {
-  "status": "ok"
+  "email": "user@example.com",
+  "password": "secret123",
+  "name": "Mladen"
+}
+```
+
+### Success
+
+* `201 Created`
+
+```json
+{
+  "token": "jwt_token",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "Mladen",
+    "created_at": "timestamp",
+    "updated_at": "timestamp"
+  }
+}
+```
+
+### Errors
+
+* `422 Unprocessable Entity` – validation
+* `409 Conflict` – email already exists
+* `400 Bad Request` – invalid JSON
+
+---
+
+## POST `/auth/login`
+
+User login.
+
+### Request
+
+```json
+{
+  "email": "user@example.com",
+  "password": "secret123"
+}
+```
+
+### Success
+
+* `200 OK`
+
+```json
+{
+  "token": "jwt_token",
+  "user": { ...UserPublic }
+}
+```
+
+### Errors
+
+* `401 Unauthorized` – wrong email or password
+* `422` – validation
+
+---
+
+# Users
+
+## GET `/users/me` 🔐
+
+Returns currenctly logged in user.
+
+### Success
+
+* `200 OK`
+
+```json
+{ ...UserPublic }
+```
+
+### Errors
+
+* `401 Unauthorized`
+
+---
+
+# Categories (JWT required)
+
+## GET `/categories` 🔐
+
+List categories for logged in user.
+
+### Success
+
+* `200 OK`
+
+```json
+{
+  "items": [ ...Category ]
 }
 ```
 
 ---
 
-### 2) Create Todo
+## POST `/categories` 🔐
 
-**POST** `/api/todos`
+Creates new category.
 
-**Request body**
+### Request
 
 ```json
 {
-  "category_id": 1,
+  "name": "Work",
+  "color": "#3B82F6"
+}
+```
+
+### Success
+
+* `201 Created`
+
+```json
+{ ...Category }
+```
+
+### Errors
+
+* `422` – validation
+* `409` – name duplicate
+* `401` – auth fail
+
+---
+
+## PATCH `/categories/:id` 🔐
+
+Update category.
+
+### Request
+
+```json
+{
+  "name": "Personal",
+  "color": "#22C55E"
+}
+```
+
+### Success
+
+* `200 OK`
+
+### Errors
+
+* `404 Not Found`
+* `422`
+* `401`
+
+---
+
+## DELETE `/categories/:id` 🔐
+
+### Success
+
+* `204 No Content`
+
+### Errors
+
+* `404`
+* `401`
+* `409` (if there are todos linked with this category)
+
+---
+
+# Todos (JWT required)
+
+## GET `/todos` 🔐
+
+List todo items.
+
+Query parameters (optional):
+
+```
+?status=open|done
+?category_id=uuid
+?limit=50
+```
+
+### Success
+
+* `200 OK`
+
+```json
+{
+  "items": [ ...Todo ]
+}
+```
+
+---
+
+## POST `/todos` 🔐
+
+Creates todo.
+
+### Request
+
+```json
+{
   "title": "Buy milk",
+  "description": "2L",
+  "category_id": "uuid",
+  "priority": 2,
+  "due_at": "timestamp"
 }
 ```
 
-**Response 201**
+### Success
+
+* `201 Created`
+
+```json
+{ ...Todo }
+```
+
+### Errors
+
+* `422`
+* `404` (category doesn't exists)
+* `401`
+
+---
+
+## GET `/todos/:id` 🔐
+
+### Success
+
+* `200 OK`
+
+```json
+{ ...Todo }
+```
+
+### Errors
+
+* `404`
+* `401`
+
+---
+
+## PATCH `/todos/:id` 🔐
+
+Partial update.
+
+### Request
 
 ```json
 {
-  "id": 1,
-  "user_id": 1,
-  "category_id": 1,
-  "title": "Buy milk",
-  "completed": false,
-  "created_at": "2026-02-19T17:30:00Z"
+  "title": "Buy oat milk",
+  "done": true
 }
 ```
 
-**Notes**
+### Success
 
-* `id` can be an integer (SQLite autoincrement) or a string/UUID/ULID—whatever your model uses.
-* Add validation rules as needed (e.g., title length, trimming, non-empty).
+* `200 OK`
+
+```json
+{ ...Todo }
+```
+
+### Errors
+
+* `404`
+* `422`
+* `401`
+
+---
+
+## DELETE `/todos/:id` 🔐
+
+### Success
+
+* `204 No Content`
+
+### Errors
+
+* `404`
+* `401`
 
 ---
 
-## Development Notes
+# Error Format
 
-* Prefer a single shared `sqlx::SqlitePool` stored in app state.
-* Keep handlers thin: parse input → call service/repo → map result to HTTP response.
-* Use `tracing` for structured logs (recommended if you add logging).
-
----
-
-## Roadmap
-
-* [ ] List todos (pagination)
-* [x] Get todo by id
-* [x] Update todo
-* [x] Delete todo
-* [x] Authentication
-* [ ] OpenAPI / Swagger docs (optional)
-* [ ] Switchable DB (Postgres later)
+```json
+{
+  "error": "Human readable message"
+}
+```
 
 ---
+
+# Auth Header Example
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```

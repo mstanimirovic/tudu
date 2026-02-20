@@ -1,7 +1,6 @@
 use axum::{
     Extension, Router,
     extract::{Json, Path, Query, State},
-    middleware::from_fn,
     routing::*,
 };
 
@@ -22,7 +21,6 @@ pub fn routes() -> Router<AppState> {
             "/{id}",
             get(get_todo).patch(update_todo).delete(delete_todo),
         )
-        .layer(from_fn(crate::auth::middleware::auth_middleware))
 }
 
 pub async fn create_todo(

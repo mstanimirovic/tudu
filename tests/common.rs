@@ -1,8 +1,8 @@
 use axum_test::TestServer;
 use sqlx::{Pool, Sqlite, sqlite::SqlitePoolOptions};
 
-use tudu::build_app;
-use tudu::build_state;
+use tudu::app::build_app;
+use tudu::app::build_state;
 
 pub async fn test_pool() -> Pool<Sqlite> {
     let pool = SqlitePoolOptions::new()

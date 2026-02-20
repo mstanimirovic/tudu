@@ -1,7 +1,6 @@
 use axum::{
     Extension, Router,
     extract::{Json, State},
-    middleware::from_fn,
     routing::*,
 };
 
@@ -12,13 +11,9 @@ use crate::{
 };
 
 pub fn routes() -> Router<AppState> {
-    let protected = Router::new()
-        .route("/me", get(get_user).patch(update_user).delete(delete_user))
-        .layer(from_fn(crate::auth::middleware::auth_middleware));
-
     Router::new()
+        .route("/me", get(get_user).patch(update_user).delete(delete_user))
         .route("/", get(get_all_users))
-        .merge(protected)
 }
 
 pub async fn get_all_users(State(state): State<AppState>) -> Result<Json<Vec<UserDto>>, AppError> {

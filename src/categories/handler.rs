@@ -1,7 +1,6 @@
 use axum::{
     Extension, Json, Router,
     extract::{Path, State},
-    middleware,
     routing::get,
 };
 
@@ -20,9 +19,6 @@ pub fn routes() -> Router<AppState> {
                 .patch(update_category)
                 .delete(delete_category),
         )
-        .layer(middleware::from_fn(
-            crate::auth::middleware::auth_middleware,
-        ))
 }
 
 pub async fn create_category(

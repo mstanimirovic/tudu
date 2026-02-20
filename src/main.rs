@@ -1,7 +1,8 @@
 use tracing_subscriber::{layer::SubscriberExt, registry, util::SubscriberInitExt};
 use tudu::db::create_pool;
 use tudu::{
-    build_app, build_state,
+    app::build_app,
+    app::build_state,
     config::{host_url, port},
 };
 

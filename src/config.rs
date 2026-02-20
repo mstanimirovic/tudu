@@ -11,3 +11,7 @@ pub fn host_url() -> String {
 pub fn port() -> String {
     env::var("PORT").unwrap_or_else(|_| "3000".to_string())
 }
+
+pub fn jwt_secret() -> String {
+    env::var("JWT_SECRET").expect("Please set jwt secret env var")
+}

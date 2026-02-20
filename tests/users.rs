@@ -1,6 +1,7 @@
 use hyper::StatusCode;
 use serde_json::json;
-use tudu::models::{auth::AuthResponse, user::UserPublic};
+use tudu::auth::dto::AuthResponse;
+use tudu::users::dto::UserDto;
 mod common;
 
 use crate::common::test_server;
@@ -28,7 +29,7 @@ async fn should_get_user_profile() {
         .await;
 
     res.assert_status(StatusCode::OK);
-    let user = res.json::<UserPublic>();
+    let user = res.json::<UserDto>();
 
     assert_eq!(user.name, "mladen");
     assert_eq!(user.email, "ms@email.com");

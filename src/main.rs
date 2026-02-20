@@ -16,7 +16,10 @@ async fn main() -> () {
         Ok(v) => v,
         Err(e) => panic!("Error while creating a sqlx pool: {}", e),
     };
-    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    match sqlx::migrate!("./migrations").run(&pool).await {
+        Ok(_) => {}
+        Err(err) => panic!("Migrations failed: {}", err),
+    }
 
     let state = build_state(pool).await;
     let app = build_app(state);

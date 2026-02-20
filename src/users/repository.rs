@@ -1,7 +1,6 @@
-use crate::models::{
-    auth::RegisterRequest,
-    user::{UpdateUserRequest, User},
-};
+use crate::users::model::User;
+
+use super::command::{CreateUser, UpdateUser};
 use sqlx::SqlitePool;
 
 #[derive(Clone)]
@@ -14,7 +13,7 @@ impl UserRepository {
         Self { pool }
     }
 
-    pub async fn create(&self, payload: RegisterRequest) -> Result<User, sqlx::Error> {
+    pub async fn create(&self, payload: CreateUser) -> Result<User, sqlx::Error> {
         sqlx::query_as::<_, User>(
             "INSERT INTO users (name, email, password) VALUES (?, ?, ?) RETURNING *",
         )
@@ -45,11 +44,7 @@ impl UserRepository {
             .await
     }
 
-    pub async fn update(
-        &self,
-        id: i64,
-        payload: UpdateUserRequest,
-    ) -> Result<Option<User>, sqlx::Error> {
+    pub async fn update(&self, id: i64, payload: UpdateUser) -> Result<Option<User>, sqlx::Error> {
         if let Some(name) = &payload.name {
             sqlx::query("UPDATE users SET name = ? WHERE id = ?")
                 .bind(name)

@@ -1,6 +1,6 @@
+use super::dto::HealthResponse;
+use crate::{error::AppError, state::AppState};
 use axum::{Json, Router, routing::get};
-
-use crate::{error::AppError, models::health::HealthResponse, state::AppState};
 
 pub async fn handler() -> Result<Json<HealthResponse>, AppError> {
     Ok(Json(HealthResponse::ok()))

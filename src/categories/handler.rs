@@ -6,8 +6,8 @@ use axum::{
 };
 
 use crate::{
+    categories::dto::{CategoryDto, CreateCategoryRequest, UpdateCategoryRequest},
     error::AppError,
-    models::category::{Category, CreateCategoryRequest, UpdateCateogryRequest},
     state::AppState,
 };
 
@@ -21,7 +21,7 @@ pub fn routes() -> Router<AppState> {
                 .delete(delete_category),
         )
         .layer(middleware::from_fn(
-            crate::middleware::auth::auth_middleware,
+            crate::auth::middleware::auth_middleware,
         ))
 }
 
@@ -29,24 +29,34 @@ pub async fn create_category(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Json(payload): Json<CreateCategoryRequest>,
-) -> Result<Json<Category>, AppError> {
-    let category = state.categories_repo.create(user_id, payload).await?;
-    Ok(Json(category))
+) -> Result<Json<CategoryDto>, AppError> {
+    let category = state
+        .categories_repo
+        .create(user_id, payload.into())
+        .await?;
+    Ok(Json(CategoryDto::from(category)))
 }
 
 pub async fn get_categories(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
-) -> Result<Json<Vec<Category>>, AppError> {
-    let categories = state.categories_repo.find_all_by_user(user_id).await?;
-    Ok(Json(categories))
+) -> Result<Json<Vec<CategoryDto>>, AppError> {
+    Ok(Json(
+        state
+            .categories_repo
+            .find_all_by_user(user_id)
+            .await?
+            .iter()
+            .map(CategoryDto::from)
+            .collect(),
+    ))
 }
 
 pub async fn get_category_by_id(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Path(id): Path<i64>,
-) -> Result<Json<Category>, AppError> {
+) -> Result<Json<CategoryDto>, AppError> {
     let category = match state.categories_repo.find_by_id(id).await? {
         Some(v) => v,
         None => return Err(AppError::NotFound),
@@ -56,15 +66,15 @@ pub async fn get_category_by_id(
             return Err(AppError::Forbidden);
         }
     }
-    Ok(Json(category))
+    Ok(Json(CategoryDto::from(category)))
 }
 
 pub async fn update_category(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    Json(payload): Json<UpdateCateogryRequest>,
-) -> Result<Json<Category>, AppError> {
+    Json(payload): Json<UpdateCategoryRequest>,
+) -> Result<Json<CategoryDto>, AppError> {
     match state.categories_repo.find_by_id(id).await? {
         Some(v) => {
             if let Some(cuser) = v.user_id
@@ -76,8 +86,8 @@ pub async fn update_category(
         None => return Err(AppError::NotFound),
     };
 
-    match state.categories_repo.update(id, payload).await? {
-        Some(v) => Ok(Json(v)),
+    match state.categories_repo.update(id, payload.into()).await? {
+        Some(v) => Ok(Json(CategoryDto::from(v))),
         None => Err(AppError::NotFound),
     }
 }

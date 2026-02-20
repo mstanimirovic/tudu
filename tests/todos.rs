@@ -2,10 +2,8 @@ use axum_test::TestServer;
 use chrono::Local;
 use hyper::StatusCode;
 use serde_json::json;
-use tudu::models::{
-    auth::AuthResponse,
-    todo::{CreateTodoRequest, Todo},
-};
+use tudu::todos::dto::TodoDto;
+use tudu::{auth::dto::AuthResponse, todos::dto::CreateTodoRequest};
 mod common;
 
 use crate::common::test_server;
@@ -45,7 +43,7 @@ async fn should_create_todo() {
         .await;
 
     res.assert_status(StatusCode::OK);
-    let todo = res.json::<Todo>();
+    let todo = res.json::<TodoDto>();
 
     assert_eq!(todo.title, "Study");
     assert_eq!(todo.category_id, None);
@@ -68,7 +66,7 @@ async fn should_get_todo() {
         .await;
 
     res.assert_status(StatusCode::OK);
-    let id = res.json::<Todo>().id;
+    let id = res.json::<TodoDto>().id;
 
     let get_res = server
         .get(format!("/api/todos/{}", id).as_str())
@@ -77,7 +75,7 @@ async fn should_get_todo() {
 
     get_res.assert_status(StatusCode::OK);
     assert_eq!(
-        res.json::<Todo>().created_at,
-        get_res.json::<Todo>().created_at
+        res.json::<TodoDto>().created_at,
+        get_res.json::<TodoDto>().created_at
     );
 }

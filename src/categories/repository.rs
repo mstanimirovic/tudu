@@ -1,4 +1,7 @@
-use crate::models::category::{Category, CreateCategoryRequest, UpdateCateogryRequest};
+use crate::categories::{
+    command::{CreateCategory, UpdateCategory},
+    model::Category,
+};
 use sqlx::SqlitePool;
 
 #[derive(Clone)]
@@ -14,7 +17,7 @@ impl CategoryRepository {
     pub async fn create(
         &self,
         user_id: i64,
-        payload: CreateCategoryRequest,
+        payload: CreateCategory,
     ) -> Result<Category, sqlx::Error> {
         sqlx::query_as::<_, Category>(
             "INSERT INTO categories (user_id, name, color) VALUES (?, ?, ?) RETURNING *",
@@ -49,7 +52,7 @@ impl CategoryRepository {
     pub async fn update(
         &self,
         id: i64,
-        payload: UpdateCateogryRequest,
+        payload: UpdateCategory,
     ) -> Result<Option<Category>, sqlx::Error> {
         if let Some(name) = &payload.name {
             sqlx::query("UPDATE categories SET name = ? WHERE id = ?")

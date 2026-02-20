@@ -1,13 +1,10 @@
 use axum::{Json, Router, extract::State, routing::post};
 
+use super::{dto::*, jwt::create_jwt};
 use crate::{
     error::AppError,
-    models::{
-        auth::{AuthResponse, LoginRequest, RegisterRequest},
-        user::{User, UserPublic},
-    },
     state::AppState,
-    util::jwt::create_jwt,
+    users::{dto::UserDto, model::User},
 };
 
 pub async fn login(
@@ -18,7 +15,7 @@ pub async fn login(
         .users_repo
         .find_by_email(payload.email)
         .await?
-        .ok_or(AppError::Unauthorized)?;
+        .ok_or(AppError::NotFound)?;
 
     if user.password != payload.password {
         return Err(AppError::Unauthorized);
@@ -31,7 +28,7 @@ pub async fn login(
 
     Ok(Json(AuthResponse {
         token: token,
-        user: UserPublic::from(user),
+        user: UserDto::from(user),
     }))
 }
 
@@ -39,17 +36,14 @@ pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<Json<AuthResponse>, AppError> {
-    let user = state.users_repo.create(payload).await?;
+    let user = state.users_repo.create(payload.into()).await?;
 
     let token = match create_jwt(user.id) {
         Ok(v) => v,
         Err(_) => return Err(AppError::InternalError),
     };
 
-    Ok(Json(AuthResponse {
-        token: token,
-        user: UserPublic::from(user),
-    }))
+    Ok(Json(AuthResponse::new(token, user)))
 }
 
 pub fn routes() -> Router<AppState> {

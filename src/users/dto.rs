@@ -1,17 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, sqlx::FromRow)]
-pub struct User {
-    pub id: i64,
-    pub name: String,
-    pub email: String,
-    pub password: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
+use crate::users::command::UpdateUser;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserPublic {
+use super::model::User;
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserDto {
     pub id: i64,
     pub name: String,
     pub email: String,
@@ -19,13 +13,22 @@ pub struct UserPublic {
     pub updated_at: i64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct UpdateUserRequest {
     pub name: Option<String>,
     pub email: Option<String>,
 }
 
-impl From<User> for UserPublic {
+impl Into<UpdateUser> for UpdateUserRequest {
+    fn into(self) -> UpdateUser {
+        UpdateUser {
+            name: self.name,
+            email: self.email,
+        }
+    }
+}
+
+impl From<User> for UserDto {
     fn from(user: User) -> Self {
         Self {
             id: user.id,
@@ -37,7 +40,7 @@ impl From<User> for UserPublic {
     }
 }
 
-impl From<&User> for UserPublic {
+impl From<&User> for UserDto {
     fn from(user: &User) -> Self {
         Self {
             id: user.id,

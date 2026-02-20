@@ -1,14 +1,18 @@
 use axum::{
     Extension, Router,
-    extract::{Json, Path, State},
+    extract::{Json, Path, Query, State},
     middleware::from_fn,
     routing::*,
 };
 
 use crate::{
     error::AppError,
-    models::todo::{CreateTodoRequest, Todo, UpdateTodoRequest},
     state::AppState,
+    todos::{
+        dto::{CreateTodoRequest, TodoDto, UpdateTodoRequest},
+        filter::TodosFilter,
+        query::TodosQuery,
+    },
 };
 
 pub fn routes() -> Router<AppState> {
@@ -18,41 +22,44 @@ pub fn routes() -> Router<AppState> {
             "/{id}",
             get(get_todo).patch(update_todo).delete(delete_todo),
         )
-        .layer(from_fn(crate::middleware::auth::auth_middleware))
+        .layer(from_fn(crate::auth::middleware::auth_middleware))
 }
 
 pub async fn create_todo(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Json(payload): Json<CreateTodoRequest>,
-) -> Result<Json<Todo>, AppError> {
-    let todo = state.todos_repo.create(user_id, payload).await?;
+) -> Result<Json<TodoDto>, AppError> {
+    let todo = state.todos_repo.create(user_id, payload.into()).await?;
     if todo.user_id != user_id {
         return Err(AppError::Forbidden);
     }
-    Ok(Json(todo))
+    Ok(Json(TodoDto::from(todo)))
 }
 
 pub async fn list_todos(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
-) -> Result<Json<Vec<Todo>>, AppError> {
-    let todos = state.todos_repo.find_all_by_user(user_id).await?;
-    Ok(Json(todos))
+    Query(query): Query<TodosQuery>,
+) -> Result<Json<Vec<TodoDto>>, AppError> {
+    let filter = TodosFilter::from_query(query);
+    let rows = state.todos_repo.find_many(user_id, filter).await?;
+    let dtos = rows.iter().map(TodoDto::from).collect();
+    Ok(Json(dtos))
 }
 
 pub async fn get_todo(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Path(id): Path<i64>,
-) -> Result<Json<Todo>, AppError> {
+) -> Result<Json<TodoDto>, AppError> {
     let todo = state.todos_repo.find_by_id(id).await?;
     match todo {
         Some(v) => {
             if v.user_id != user_id {
                 return Err(AppError::Forbidden);
             }
-            Ok(Json(v))
+            Ok(Json(TodoDto::from(v)))
         }
         None => Err(AppError::NotFound),
     }
@@ -63,7 +70,7 @@ pub async fn update_todo(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateTodoRequest>,
-) -> Result<Json<Todo>, AppError> {
+) -> Result<Json<TodoDto>, AppError> {
     match state.todos_repo.find_by_id(id).await? {
         Some(v) => {
             if v.user_id != user_id {
@@ -73,8 +80,8 @@ pub async fn update_todo(
         None => return Err(AppError::NotFound),
     };
 
-    match state.todos_repo.update(id, payload).await? {
-        Some(v) => Ok(Json(v)),
+    match state.todos_repo.update(id, payload.into()).await? {
+        Some(v) => Ok(Json(TodoDto::from(v))),
         None => Err(AppError::NotFound),
     }
 }

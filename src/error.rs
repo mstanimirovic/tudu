@@ -17,7 +17,14 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
-            AppError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database error"),
+            AppError::Database(err) => {
+                let msg = format!("Database error: {}", err.to_string());
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": msg.as_str() })),
+                )
+                    .into_response();
+            }
             AppError::NotFound => (StatusCode::NOT_FOUND, "Not found"),
             AppError::Unauthorized => (
                 StatusCode::UNAUTHORIZED,

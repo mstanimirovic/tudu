@@ -1,7 +1,6 @@
-use crate::{
-    repositories::category_repo::CategoryRepository, repositories::todo_repo::TodoRepository,
-    repositories::user_repo::UserRepository,
-};
+use crate::categories::repository::CategoryRepository;
+use crate::todos::repository::TodoRepository;
+use crate::users::repository::UserRepository;
 
 #[derive(Clone)]
 pub struct AppState {

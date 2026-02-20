@@ -1,81 +1,83 @@
-// use serde_json::json;
-// use tower::ServiceExt; // oneshot
+use axum_test::TestServer;
+use chrono::Local;
+use hyper::StatusCode;
+use serde_json::json;
+use tudu::models::{
+    auth::AuthResponse,
+    todo::{CreateTodoRequest, Todo},
+};
+mod common;
 
-// use tudu::{build_app, build_state};
-// mod common;
-// use common::{bearer_req, json_req, read_json, test_pool};
+use crate::common::test_server;
 
-// #[tokio::test]
-// async fn create_todo_ok() {
-//     let pool = test_pool().await;
-//     let state = build_state(pool).await;
-//     let app = build_app(state);
+async fn create_user(server: &TestServer) -> String {
+    let res = server
+        .post("/auth/register")
+        .json(&json!(
+            {
+                "name": "mladen",
+                "email": "ms@email.com",
+                "password": "huha"
+            }
+        ))
+        .await;
 
-//     // register
-//     let res = app
-//         .clone()
-//         .oneshot(json_req(
-//             "POST",
-//             "/auth/register",
-//             json!({
-//                 "name": "mladen",
-//                 "email": "a@a.com",
-//                 "password_hash": "pass12345"
-//             }),
-//         ))
-//         .await
-//         .unwrap();
-//     assert_eq!(res.status(), 201);
+    res.assert_status(StatusCode::OK);
 
-//     // login
-//     let res = app
-//         .clone()
-//         .oneshot(json_req(
-//             "POST",
-//             "/auth/login",
-//             json!({
-//                 "email": "a@a.com",
-//                 "password": "pass12345"
-//             }),
-//         ))
-//         .await
-//         .unwrap();
-//     assert_eq!(res.status(), 200);
-//     let v = read_json(res).await;
-//     let token = v["token"].as_str().unwrap().to_string();
+    let body = res.json::<AuthResponse>();
+    return body.token;
+}
 
-//     // create category
-//     let req = bearer_req(
-//         json_req(
-//             "POST",
-//             "/api/categories",
-//             json!({
-//                 "name": "Work"
-//             }),
-//         ),
-//         &token,
-//     );
-//     let res = app.clone().oneshot(req).await.unwrap();
-//     assert_eq!(res.status(), 201);
-//     let cat = read_json(res).await;
-//     let category_id = cat["id"].as_i64().unwrap();
+#[tokio::test]
+async fn should_create_todo() {
+    let server = test_server().await;
+    let token = create_user(&server).await;
+    let res = server
+        .post("/api/todos")
+        .authorization_bearer(token)
+        .json(&json!(CreateTodoRequest {
+            category_id: None,
+            title: "Study".to_string(),
+            description: None,
+            priority: 1,
+            due_at: Local::now().timestamp() + 10
+        }))
+        .await;
 
-//     // create todo
-//     let req = bearer_req(
-//         json_req(
-//             "POST",
-//             "/api/todos",
-//             json!({
-//                 "title": "My todo",
-//             }),
-//         ),
-//         &token,
-//     );
+    res.assert_status(StatusCode::OK);
+    let todo = res.json::<Todo>();
 
-//     let res = app.oneshot(req).await.unwrap();
-//     assert_eq!(res.status(), 201);
+    assert_eq!(todo.title, "Study");
+    assert_eq!(todo.category_id, None);
+}
 
-//     let todo = read_json(res).await;
-//     assert_eq!(todo["title"], "My todo");
-//     assert_eq!(todo["categoryId"], category_id);
-// }
+#[tokio::test]
+async fn should_get_todo() {
+    let server = test_server().await;
+    let token = create_user(&server).await;
+    let res = server
+        .post("/api/todos")
+        .authorization_bearer(token.clone())
+        .json(&json!(CreateTodoRequest {
+            category_id: None,
+            title: "Study".to_string(),
+            description: None,
+            priority: 1,
+            due_at: Local::now().timestamp() + 10
+        }))
+        .await;
+
+    res.assert_status(StatusCode::OK);
+    let id = res.json::<Todo>().id;
+
+    let get_res = server
+        .get(format!("/api/todos/{}", id).as_str())
+        .authorization_bearer(token)
+        .await;
+
+    get_res.assert_status(StatusCode::OK);
+    assert_eq!(
+        res.json::<Todo>().created_at,
+        get_res.json::<Todo>().created_at
+    );
+}

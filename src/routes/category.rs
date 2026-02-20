@@ -1,18 +1,34 @@
 use axum::{
-    Extension, Json,
+    Extension, Json, Router,
     extract::{Path, State},
+    middleware,
+    routing::get,
 };
 
 use crate::{
-    categories::models::{Category, CreateCategory, UpdateCateogry},
     error::AppError,
+    models::category::{Category, CreateCategoryRequest, UpdateCateogryRequest},
     state::AppState,
 };
+
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/", get(get_categories).post(create_category))
+        .route(
+            "/{id}",
+            get(get_category_by_id)
+                .patch(update_category)
+                .delete(delete_category),
+        )
+        .layer(middleware::from_fn(
+            crate::middleware::auth::auth_middleware,
+        ))
+}
 
 pub async fn create_category(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
-    Json(payload): Json<CreateCategory>,
+    Json(payload): Json<CreateCategoryRequest>,
 ) -> Result<Json<Category>, AppError> {
     let category = state.categories_repo.create(user_id, payload).await?;
     Ok(Json(category))
@@ -47,7 +63,7 @@ pub async fn update_category(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    Json(payload): Json<UpdateCateogry>,
+    Json(payload): Json<UpdateCateogryRequest>,
 ) -> Result<Json<Category>, AppError> {
     match state.categories_repo.find_by_id(id).await? {
         Some(v) => {

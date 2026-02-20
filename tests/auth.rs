@@ -20,7 +20,7 @@ async fn should_register() {
             {
                 "name": "mladen",
                 "email": "ms@email.com",
-                "password_hash": "huha"
+                "password": "huha"
             }
         ))
         .await;
@@ -30,7 +30,7 @@ async fn should_register() {
     let body: Value = res.json();
     assert!(body.is_object());
     assert!(body.get("token").is_some());
-    assert!(body.get("user_id").is_some());
+    assert!(body.get("user").is_some());
 }
 
 #[tokio::test]
@@ -42,7 +42,7 @@ async fn should_login() {
             {
                 "name": "mladen",
                 "email": "ms@email.com",
-                "password_hash": "huha"
+                "password": "huha"
             }
         ))
         .await;
@@ -52,7 +52,7 @@ async fn should_login() {
         .json(&json!(
             {
                 "email": "ms@email.com",
-                "password_hash": "huha"
+                "password": "huha"
             }
         ))
         .await;
@@ -62,5 +62,5 @@ async fn should_login() {
     let body: Value = res.json();
     assert!(body.is_object());
     assert!(body.get("token").is_some());
-    assert!(body.get("user_id").is_some());
+    assert!(body.get("user").is_some());
 }

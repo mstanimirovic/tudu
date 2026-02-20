@@ -11,6 +11,7 @@ pub enum AppError {
     Unauthorized,
     Forbidden,
     InternalError,
+    Conflict,
 }
 
 impl IntoResponse for AppError {
@@ -27,6 +28,7 @@ impl IntoResponse for AppError {
                 "Access denied - Insufficient permissions",
             ),
             AppError::InternalError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error"),
+            AppError::Conflict => (StatusCode::CONFLICT, "Conflict with data"),
         };
         (status, Json(json!({ "error": message }))).into_response()
     }

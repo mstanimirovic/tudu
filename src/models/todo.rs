@@ -4,25 +4,31 @@ use serde::{Deserialize, Serialize};
 pub struct Todo {
     pub id: i64,
     pub user_id: i64,
-    pub category_id: i64,
+    pub category_id: Option<i64>,
     pub title: String,
     pub description: Option<String>,
-    pub completed: bool,
+    pub done: bool,
+    pub priority: i64,
+    pub due_at: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct CreateTodo {
-    pub category_id: i64,
+pub struct CreateTodoRequest {
+    pub category_id: Option<i64>,
     pub title: String,
     pub description: Option<String>,
+    pub priority: i64,
+    pub due_at: i64,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UpdateTodo {
+pub struct UpdateTodoRequest {
     pub category_id: Option<i64>,
     pub title: Option<String>,
     pub description: Option<String>,
-    pub completed: Option<bool>,
+    pub done: Option<bool>,
+    pub priority: Option<i64>,
+    pub due_at: Option<i64>,
 }

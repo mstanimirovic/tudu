@@ -1,21 +1,21 @@
-pub mod auth;
-pub mod categories;
 pub mod config;
 pub mod db;
 pub mod error;
-pub mod health;
+pub mod middleware;
+pub mod models;
+pub mod repositories;
+pub mod routes;
 pub mod state;
-pub mod todos;
-pub mod users;
+pub mod util;
 
-use axum::{Router, routing::get};
+use axum::Router;
 use sqlx::{Pool, Sqlite};
 use tower_http::trace::TraceLayer;
 
-use categories::repository::CategoryRepository;
+use crate::repositories::{
+    category_repo::CategoryRepository, todo_repo::TodoRepository, user_repo::UserRepository,
+};
 use state::AppState;
-use todos::repository::TodoRepository;
-use users::repository::UserRepository;
 
 pub async fn build_state(pool: Pool<Sqlite>) -> AppState {
     AppState::new(
@@ -27,11 +27,11 @@ pub async fn build_state(pool: Pool<Sqlite>) -> AppState {
 
 pub fn build_app(state: AppState) -> Router {
     Router::new()
-        .route("/health", get(health::routes::handler))
-        .nest("/auth", auth::routes::routes())
-        .nest("/api/users", users::routes::routes())
-        .nest("/api/todos", todos::routes::routes())
-        .nest("/api/categories", categories::routes::routes())
+        .merge(routes::health::routes())
+        .nest("/auth", routes::auth::routes())
+        .nest("/api/users", routes::user::routes())
+        .nest("/api/todos", routes::todo::routes())
+        .nest("/api/categories", routes::category::routes())
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }

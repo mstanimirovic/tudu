@@ -1,18 +1,30 @@
 use axum::{
-    Extension,
+    Extension, Router,
     extract::{Json, Path, State},
+    middleware::from_fn,
+    routing::*,
 };
 
 use crate::{
     error::AppError,
+    models::todo::{CreateTodoRequest, Todo, UpdateTodoRequest},
     state::AppState,
-    todos::models::{CreateTodo, Todo, UpdateTodo},
 };
+
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/", post(create_todo).get(list_todos))
+        .route(
+            "/{id}",
+            get(get_todo).patch(update_todo).delete(delete_todo),
+        )
+        .layer(from_fn(crate::middleware::auth::auth_middleware))
+}
 
 pub async fn create_todo(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
-    Json(payload): Json<CreateTodo>,
+    Json(payload): Json<CreateTodoRequest>,
 ) -> Result<Json<Todo>, AppError> {
     let todo = state.todos_repo.create(user_id, payload).await?;
     if todo.user_id != user_id {
@@ -50,7 +62,7 @@ pub async fn update_todo(
     Extension(user_id): Extension<i64>,
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    Json(payload): Json<UpdateTodo>,
+    Json(payload): Json<UpdateTodoRequest>,
 ) -> Result<Json<Todo>, AppError> {
     match state.todos_repo.find_by_id(id).await? {
         Some(v) => {

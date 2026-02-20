@@ -1,4 +1,4 @@
-use super::models::*;
+use crate::models::category::{Category, CreateCategoryRequest, UpdateCateogryRequest};
 use sqlx::SqlitePool;
 
 #[derive(Clone)]
@@ -14,15 +14,14 @@ impl CategoryRepository {
     pub async fn create(
         &self,
         user_id: i64,
-        payload: CreateCategory,
+        payload: CreateCategoryRequest,
     ) -> Result<Category, sqlx::Error> {
         sqlx::query_as::<_, Category>(
-            "INSERT INTO categories (user_id, parent_id, name, description) VALUES (?, ?, ?, ?) RETURNING *",
+            "INSERT INTO categories (user_id, name, color) VALUES (?, ?, ?) RETURNING *",
         )
         .bind(user_id)
-        .bind(payload.parent_id)
         .bind(&payload.name)
-        .bind(&payload.description)
+        .bind(&payload.color)
         .fetch_one(&self.pool)
         .await
     }
@@ -34,12 +33,10 @@ impl CategoryRepository {
     }
 
     pub async fn find_all_by_user(&self, user_id: i64) -> Result<Vec<Category>, sqlx::Error> {
-        sqlx::query_as::<_, Category>(
-            "SELECT * FROM categories WHERE user_id = ? OR user_id IS NULL",
-        )
-        .bind(user_id)
-        .fetch_all(&self.pool)
-        .await
+        sqlx::query_as::<_, Category>("SELECT * FROM categories WHERE user_id = ?")
+            .bind(user_id)
+            .fetch_all(&self.pool)
+            .await
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Category>, sqlx::Error> {
@@ -52,16 +49,8 @@ impl CategoryRepository {
     pub async fn update(
         &self,
         id: i64,
-        payload: UpdateCateogry,
+        payload: UpdateCateogryRequest,
     ) -> Result<Option<Category>, sqlx::Error> {
-        if let Some(parent_id) = &payload.parent_id {
-            sqlx::query("UPDATE categories SET parent_id = ? WHERE id = ?")
-                .bind(parent_id)
-                .bind(id)
-                .execute(&self.pool)
-                .await?;
-        }
-
         if let Some(name) = &payload.name {
             sqlx::query("UPDATE categories SET name = ? WHERE id = ?")
                 .bind(name)
@@ -70,9 +59,9 @@ impl CategoryRepository {
                 .await?;
         }
 
-        if let Some(description) = &payload.description {
-            sqlx::query("UPDATE categories SET description = ? WHERE id = ?")
-                .bind(description)
+        if let Some(color) = &payload.color {
+            sqlx::query("UPDATE categories SET color = ? WHERE id = ?")
+                .bind(color)
                 .bind(id)
                 .execute(&self.pool)
                 .await?;

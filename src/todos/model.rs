@@ -1,3 +1,5 @@
+use chrono::{DateTime, Utc};
+
 #[derive(Debug, sqlx::FromRow)]
 pub struct Todo {
     pub id: i64,
@@ -6,8 +8,8 @@ pub struct Todo {
     pub title: String,
     pub description: Option<String>,
     pub done: bool,
-    pub priority: i64,
-    pub due_at: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
+    pub priority: i32,
+    pub due_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

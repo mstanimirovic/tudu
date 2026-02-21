@@ -9,7 +9,7 @@ pub fn host_url() -> String {
 }
 
 pub fn port() -> String {
-    env::var("PORT").unwrap_or_else(|_| "3000".to_string())
+    env::var("APP_PORT").unwrap_or_else(|_| "3000".to_string())
 }
 
 pub fn jwt_secret() -> String {

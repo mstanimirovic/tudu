@@ -1,5 +1,5 @@
 use axum::{Router, middleware};
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, Postgres};
 use tower_http::trace::TraceLayer;
 
 use crate::categories::repository::CategoryRepository;
@@ -7,7 +7,7 @@ use crate::state::AppState;
 use crate::todos::repository::TodoRepository;
 use crate::users::repository::UserRepository;
 
-pub async fn build_state(pool: Pool<Sqlite>) -> AppState {
+pub async fn build_state(pool: Pool<Postgres>) -> AppState {
     AppState::new(
         UserRepository::new(pool.clone()),
         TodoRepository::new(pool.clone()),

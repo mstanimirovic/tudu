@@ -1,5 +1,5 @@
 use axum_test::TestServer;
-use chrono::Local;
+use chrono::DateTime;
 use hyper::StatusCode;
 use serde_json::json;
 use tudu::todos::dto::TodoDto;
@@ -38,7 +38,7 @@ async fn should_create_todo() {
             title: "Study".to_string(),
             description: None,
             priority: 1,
-            due_at: Local::now().timestamp() + 10
+            due_at: DateTime::default()
         }))
         .await;
 
@@ -61,7 +61,7 @@ async fn should_get_todo() {
             title: "Study".to_string(),
             description: None,
             priority: 1,
-            due_at: Local::now().timestamp() + 10
+            due_at: DateTime::default()
         }))
         .await;
 

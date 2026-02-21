@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::categories::{
@@ -10,8 +11,8 @@ pub struct CategoryDto {
     pub id: i64,
     pub name: String,
     pub color: Option<String>,
-    pub created_at: i64,
-    pub updated_at: i64,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -3,21 +3,21 @@ use crate::todos::{
     command::{CreateTodo, UpdateTodo},
     filter::{TodosFilter, order_dir, sort_column},
 };
-use sqlx::{QueryBuilder, Sqlite, SqlitePool};
+use sqlx::{PgPool, QueryBuilder, postgres::Postgres};
 
 #[derive(Clone)]
 pub struct TodoRepository {
-    pool: SqlitePool,
+    pool: PgPool,
 }
 
 impl TodoRepository {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
     pub async fn create(&self, user_id: i64, payload: CreateTodo) -> Result<Todo, sqlx::Error> {
         sqlx::query_as::<_, Todo>(
-            "INSERT INTO todos (user_id, category_id, title, description, priority, due_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING *",
+            "INSERT INTO todos (user_id, category_id, title, description, priority, due_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
         )
         .bind(user_id)
         .bind(payload.category_id)
@@ -40,7 +40,7 @@ impl TodoRepository {
         user_id: i64,
         filter: TodosFilter,
     ) -> Result<Vec<Todo>, sqlx::Error> {
-        let mut qb: QueryBuilder<Sqlite> = QueryBuilder::new(
+        let mut qb: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"
                 SELECT
                     id, user_id, category_id, title, description,
@@ -85,14 +85,14 @@ impl TodoRepository {
     }
 
     pub async fn find_all_by_user(&self, user_id: i64) -> Result<Vec<Todo>, sqlx::Error> {
-        sqlx::query_as::<_, Todo>("SELECT * FROM todos WHERE user_id = ?")
+        sqlx::query_as::<_, Todo>("SELECT * FROM todos WHERE user_id = $1")
             .bind(user_id)
             .fetch_all(&self.pool)
             .await
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Todo>, sqlx::Error> {
-        sqlx::query_as::<_, Todo>("SELECT * FROM todos WHERE id = ?")
+        sqlx::query_as::<_, Todo>("SELECT * FROM todos WHERE id = $1")
             .bind(id)
             .fetch_optional(&self.pool)
             .await
@@ -100,7 +100,7 @@ impl TodoRepository {
 
     pub async fn update(&self, id: i64, payload: UpdateTodo) -> Result<Option<Todo>, sqlx::Error> {
         if let Some(category_id) = &payload.category_id {
-            sqlx::query("UPDATE todos SET category_id = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET category_id = $1 WHERE id = $2")
                 .bind(category_id)
                 .bind(id)
                 .execute(&self.pool)
@@ -108,7 +108,7 @@ impl TodoRepository {
         }
 
         if let Some(title) = &payload.title {
-            sqlx::query("UPDATE todos SET title = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET title = $1 WHERE id = $2")
                 .bind(title)
                 .bind(id)
                 .execute(&self.pool)
@@ -116,7 +116,7 @@ impl TodoRepository {
         }
 
         if let Some(description) = &payload.description {
-            sqlx::query("UPDATE todos SET description = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET description = $1 WHERE id = $2")
                 .bind(description)
                 .bind(id)
                 .execute(&self.pool)
@@ -124,7 +124,7 @@ impl TodoRepository {
         }
 
         if let Some(done) = &payload.done {
-            sqlx::query("UPDATE todos SET done = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET done = $1 WHERE id = $2")
                 .bind(done)
                 .bind(id)
                 .execute(&self.pool)
@@ -132,7 +132,7 @@ impl TodoRepository {
         }
 
         if let Some(priority) = &payload.priority {
-            sqlx::query("UPDATE todos SET priority = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET priority = $1 WHERE id = $2")
                 .bind(priority)
                 .bind(id)
                 .execute(&self.pool)
@@ -140,7 +140,7 @@ impl TodoRepository {
         }
 
         if let Some(due_at) = &payload.due_at {
-            sqlx::query("UPDATE todos SET due_at = ? WHERE id = ?")
+            sqlx::query("UPDATE todos SET due_at = $1 WHERE id = $2")
                 .bind(due_at)
                 .bind(id)
                 .execute(&self.pool)
@@ -151,7 +151,7 @@ impl TodoRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query("DELETE FROM todos WHERE id = ?")
+        let result = sqlx::query("DELETE FROM todos WHERE id = $1")
             .bind(id)
             .execute(&self.pool)
             .await?;

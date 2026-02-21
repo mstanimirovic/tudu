@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::todos::{
@@ -12,10 +13,10 @@ pub struct TodoDto {
     pub title: String,
     pub description: Option<String>,
     pub done: bool,
-    pub priority: i64,
-    pub due_at: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
+    pub priority: i32,
+    pub due_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -23,8 +24,8 @@ pub struct CreateTodoRequest {
     pub category_id: Option<i64>,
     pub title: String,
     pub description: Option<String>,
-    pub priority: i64,
-    pub due_at: i64,
+    pub priority: Option<i32>,
+    pub due_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -33,8 +34,8 @@ pub struct UpdateTodoRequest {
     pub title: Option<String>,
     pub description: Option<String>,
     pub done: Option<bool>,
-    pub priority: Option<i64>,
-    pub due_at: Option<i64>,
+    pub priority: Option<i32>,
+    pub due_at: Option<DateTime<Utc>>,
 }
 
 impl Into<CreateTodo> for CreateTodoRequest {

@@ -1,13 +1,15 @@
 use axum_test::TestServer;
-use sqlx::{Pool, Sqlite, sqlite::SqlitePoolOptions};
+use sqlx::Postgres;
+use sqlx::{Pool, postgres::PgPoolOptions};
 
 use tudu::app::build_app;
 use tudu::app::build_state;
+use tudu::config::database_url;
 
-pub async fn test_pool() -> Pool<Sqlite> {
-    let pool = SqlitePoolOptions::new()
+pub async fn test_pool() -> Pool<Postgres> {
+    let pool = PgPoolOptions::new()
         .max_connections(1)
-        .connect(":memory:")
+        .connect(database_url().as_str())
         .await
         .unwrap();
 

@@ -1,21 +1,21 @@
 use crate::users::model::User;
 
 use super::command::{CreateUser, UpdateUser};
-use sqlx::SqlitePool;
+use sqlx::postgres::PgPool;
 
 #[derive(Clone)]
 pub struct UserRepository {
-    pool: SqlitePool,
+    pool: PgPool,
 }
 
 impl UserRepository {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
     pub async fn create(&self, payload: CreateUser) -> Result<User, sqlx::Error> {
         sqlx::query_as::<_, User>(
-            "INSERT INTO users (name, email, password) VALUES (?, ?, ?) RETURNING *",
+            "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
         )
         .bind(&payload.name)
         .bind(&payload.email)
@@ -31,14 +31,14 @@ impl UserRepository {
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<User>, sqlx::Error> {
-        sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = ?")
+        sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
             .bind(id)
             .fetch_optional(&self.pool)
             .await
     }
 
     pub async fn find_by_email(&self, email: String) -> Result<Option<User>, sqlx::Error> {
-        sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = ?")
+        sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
             .bind(email)
             .fetch_optional(&self.pool)
             .await
@@ -46,7 +46,7 @@ impl UserRepository {
 
     pub async fn update(&self, id: i64, payload: UpdateUser) -> Result<Option<User>, sqlx::Error> {
         if let Some(name) = &payload.name {
-            sqlx::query("UPDATE users SET name = ? WHERE id = ?")
+            sqlx::query("UPDATE users SET name = $1 WHERE id = $2")
                 .bind(name)
                 .bind(id)
                 .execute(&self.pool)
@@ -54,7 +54,7 @@ impl UserRepository {
         }
 
         if let Some(email) = &payload.email {
-            sqlx::query("UPDATE users SET email = ? WHERE id = ?")
+            sqlx::query("UPDATE users SET email = $1 WHERE id = $2")
                 .bind(email)
                 .bind(id)
                 .execute(&self.pool)
@@ -65,7 +65,7 @@ impl UserRepository {
     }
 
     pub async fn delete(&self, id: i64) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query("DELETE FROM users WHERE id = ?")
+        let result = sqlx::query("DELETE FROM users WHERE id = $1")
             .bind(id)
             .execute(&self.pool)
             .await?;

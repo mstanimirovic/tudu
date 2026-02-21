@@ -37,7 +37,7 @@ async fn should_create_todo() {
             category_id: None,
             title: "Study".to_string(),
             description: None,
-            priority: 1,
+            priority: Some(1),
             due_at: DateTime::default()
         }))
         .await;
@@ -60,7 +60,7 @@ async fn should_get_todo() {
             category_id: None,
             title: "Study".to_string(),
             description: None,
-            priority: 1,
+            priority: Some(1),
             due_at: DateTime::default()
         }))
         .await;
